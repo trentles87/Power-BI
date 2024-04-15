@@ -1,0 +1,36 @@
+let
+    // Start and End dates for Date Table. Adjust these for the date ranges of the particular report
+    StartDate = #date(2020, 1, 1),
+    EndDate = #date(2024, 12, 31),
+    Duration = Duration.Days(Duration.From(EndDate - StartDate))+1,
+    ListDates = List.Dates(StartDate, Duration, #duration(1,0,0,0)),
+
+    //Convert to Table
+    #"Converted to Table" = Table.FromList(ListDates, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Renamed Columns" = Table.RenameColumns(#"Converted to Table",{{"Column1", "Date"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Date", type date}}),
+
+    //Add Year Column
+    #"Inserted Year" = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Date]), Int64.Type),
+    
+    //Add Quarter Columns
+    #"Inserted QuarterNo" = Table.AddColumn(#"Inserted Year", "QuarterNo", each Date.QuarterOfYear([Date]), Int64.Type),
+    #"Created Quarter" = Table.AddColumn(#"Inserted QuarterNo", "Quarter", each "Q" & Text.From([QuarterNo])),
+    
+    //Add Month Columns
+    #"Inserted Month" = Table.AddColumn(#"Created Quarter", "Month No", each Date.Month([Date]), Int64.Type),
+    #"Inserted Month Name" = Table.AddColumn(#"Inserted Month", "Month Name", each Date.MonthName([Date]), type text),
+    #"Inserted Month Short" = Table.AddColumn(#"Inserted Month Name", "Month Name Short", each Text.Start(Date.MonthName([Date]),3), type text),
+    #"Inserted Start of Month" = Table.AddColumn(#"Inserted Month Short", "Start of Month", each Date.StartOfMonth([Date]), type date),
+    
+    //Add Week Columns
+    #"Inserted Week of Year" = Table.AddColumn(#"Inserted Start of Month", "Week of Year", each Date.WeekOfYear([Date]), Int64.Type),
+    
+    
+    //Add 
+    #"Inserted Day" = Table.AddColumn(#"Inserted Week of Year", "Day Of Month", each Date.Day([Date]), Int64.Type),
+    #"Inserted Day of Week" = Table.AddColumn(#"Inserted Day", "Day of Week", each Date.DayOfWeek([Date]), Int64.Type),
+    #"Inserted Day Name" = Table.AddColumn(#"Inserted Day of Week", "Day Name", each Date.DayOfWeekName([Date]), type text),
+    #"Inserted Day Short" = Table.AddColumn(#"Inserted Day Name", "Day Name Short", each Text.Start(Date.DayOfWeekName([Date]),3), type text)
+in
+    #"Inserted Day Short"
